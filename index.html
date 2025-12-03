@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to AI Coding Masterclass</title>
     <style>
+        /* animated visual background (canvas) sits behind everything */
+        #bgCanvas {
+            will-change: transform;
+            transform: translateZ(0);
+            background: linear-gradient(180deg, rgba(5,8,18,0.8) 0%, rgba(13,16,28,0.45) 100%);
+        }
         * {
             margin: 0;
             padding: 0;
@@ -13,7 +19,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* fallback gradient for old browsers and users with motion disabled */
+            background: linear-gradient(135deg, #101114 0%, #1b1e2b 100%);
             color: #333;
             line-height: 1.6;
             padding: 20px;
@@ -22,6 +29,14 @@
         .container {
             max-width: 900px;
             margin: 0 auto;
+            background: transparent; /* let the canvas show behind header */
+            border-radius: 0; /* card visuals moved into .card */
+            box-shadow: none;
+            overflow: visible;
+        }
+
+        /* inner white card that holds the content and footer (keeps visual layout while allowing header to show canvas behind) */
+        .card {
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -35,10 +50,20 @@
             text-align: center;
         }
 
+        /* when the canvas is active (or the user forces it), make the header transparent so the canvas shows through */
+        html.canvas-visible .header,
+        html.force-bg .header {
+            background: transparent !important;
+        }
+
         .header h1 {
             font-size: 3em;
             margin-bottom: 20px;
             animation: fadeInDown 1s;
+            color: #fff !important; /* force full-white so it remains visible */
+            opacity: 1 !important; /* avoid any accidental fading */
+            font-weight: 900; /* bolder so it doesn't appear washed out */
+            text-shadow: 0 3px 28px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.25);
         }
 
         .header .subtitle {
@@ -50,12 +75,37 @@
         .value-badge {
             display: inline-block;
             background: rgba(255,255,255,0.2);
-            padding: 10px 30px;
+            padding: 8px 24px;
             border-radius: 50px;
+            margin-top: 12px;
+            font-size: 0.85em; /* now smaller and not pulsating */
+            font-weight: 700;
+            animation: none; /* removed pulse from value */
+            opacity: 0.95;
+        }
+
+        /* new GitHub button under the value badge */
+        .github-button {
+            display: inline-block;
             margin-top: 20px;
-            font-size: 1.1em;
-            font-weight: bold;
-            animation: pulse 2s infinite;
+            background: rgba(255,255,255,0.18);
+            color: white;
+            padding: 14px 34px; /* larger button */
+            font-size: 1.25em; /* bigger text */
+            font-weight: 800;
+            text-decoration: none;
+            border-radius: 34px;
+            border: 1px solid rgba(255,255,255,0.28);
+            transition: transform 0.22s, background 0.22s, color 0.22s, box-shadow 0.22s;
+            animation: pulse 2s infinite; /* github button now pulsates */
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+        }
+
+        .github-button:hover {
+            transform: translateY(-4px) scale(1.02);
+            background: white;
+            color: #764ba2;
+            box-shadow: 0 14px 40px rgba(0,0,0,0.2);
         }
 
         .content {
@@ -283,14 +333,21 @@
     </style>
 </head>
 <body>
+    <!-- canvas for animated / static background. Kept even when reduced-motion is enabled so page doesn't render blank -->
+    <canvas id="bgCanvas" aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;display:block;"></canvas>
     <div class="container">
         <div class="header">
             <h1>🚀 Welcome to the Future of Coding</h1>
             <p class="subtitle">The AI Coding Masterclass: Zero to Production</p>
+            <!-- github button is now above the value badge and pulsates as primary CTA -->
+            <div>
+                <a class="github-button" href="https://github.com/aeiouofficial/The-Ultimate-AI-Coding-Masterclass-For-Dummies-" target="_blank" rel="noopener noreferrer">GO TO GITHUB REPO</a>
+            </div>
             <div class="value-badge">💎 VALUE: $497 • TODAY: FREE</div>
         </div>
 
-        <div class="content">
+        <div class="card">
+            <div class="content">
             <h2 style="text-align: center; color: #667eea; margin-bottom: 30px; font-size: 2em;">
                 Your Journey Starts Here
             </h2>
@@ -498,16 +555,332 @@
             </div>
         </div>
 
-        <div class="footer">
+            </div>
+
+            <div class="footer">
             <p>© 2025 AI Coding Masterclass by Nicolai Becker (AEiOU)
 Version 1.0 | You've got this! 💪</p>
             <p style="margin-top: 10px; font-size: 0.9em;">
                 Share this with a friend who wants to learn coding
             </p>
         </div>
+        </div>
     </div>
 
     <script>
+        // temporary visual debug overlay to help troubleshoot white-screen issues
+        (function() {
+            const overlay = document.createElement('div');
+            overlay.id = 'debug-overlay';
+            overlay.style.position = 'fixed';
+            overlay.style.right = '14px';
+            overlay.style.top = '14px';
+            overlay.style.zIndex = '2147483647';
+            overlay.style.background = 'rgba(0,0,0,0.72)';
+            overlay.style.color = 'white';
+            overlay.style.fontSize = '12px';
+            overlay.style.padding = '10px 12px';
+            overlay.style.borderRadius = '8px';
+            overlay.style.maxWidth = '320px';
+            overlay.style.fontFamily = 'system-ui, Arial, sans-serif';
+            overlay.style.boxShadow = '0 6px 18px rgba(0,0,0,0.35)';
+            overlay.style.backdropFilter = 'blur(6px)';
+            overlay.innerText = 'Debugger: waiting for page status...';
+            document.documentElement.appendChild(overlay);
+
+            function report(msg) {
+                const now = new Date().toLocaleTimeString();
+                overlay.innerText = `${now} — ${msg}`;
+            }
+
+            // report DOM ready
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                report('DOM ready');
+            } else {
+                document.addEventListener('DOMContentLoaded', () => report('DOMContentLoaded'));
+            }
+
+            // catch uncaught errors
+            window.addEventListener('error', (e) => {
+                report('JS error: ' + (e && e.message ? e.message : String(e)));
+                overlay.style.background = 'rgba(160,24,24,0.85)';
+            }, true);
+
+            window.addEventListener('unhandledrejection', (ev) => {
+                report('Unhandled promise: ' + (ev && ev.reason ? String(ev.reason) : 'unknown'));
+                overlay.style.background = 'rgba(160,24,24,0.85)';
+            });
+
+            // show a short snapshot of important values that help debug white pages
+            setTimeout(() => {
+                try {
+                    const canvas = document.getElementById('bgCanvas');
+                    const overlayInfo = [];
+                    overlayInfo.push('innerWidth=' + window.innerWidth + ' innerHeight=' + window.innerHeight);
+                    overlayInfo.push('canvas=' + (canvas ? 'present' : 'missing'));
+                    overlayInfo.push('prefers-reduced-motion=' + (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduce' : 'no'));
+                    report(overlayInfo.join(' • '));
+                } catch (err) {
+                    report('error inspecting page: ' + err.message);
+                }
+            }, 1200);
+
+            // add a close control
+            overlay.addEventListener('click', (e) => {
+                if (e.metaKey || e.ctrlKey) overlay.remove();
+            });
+        })();
+        // small persistent toggle so you can force-enable the animated background
+        (function(){
+            try {
+                const toggle = document.createElement('button');
+                toggle.id = 'bg-force-toggle';
+                toggle.setAttribute('aria-pressed', 'false');
+                toggle.title = 'Force-enable background animation (overrides system reduced motion)';
+                toggle.style.position = 'fixed';
+                toggle.style.left = '14px';
+                toggle.style.top = '14px';
+                toggle.style.zIndex = '2147483646';
+                toggle.style.background = 'rgba(255,255,255,0.06)';
+                toggle.style.color = 'white';
+                toggle.style.border = '1px solid rgba(255,255,255,0.12)';
+                toggle.style.padding = '8px 10px';
+                toggle.style.borderRadius = '6px';
+                toggle.style.backdropFilter = 'blur(6px)';
+                toggle.style.fontSize = '12px';
+                toggle.style.cursor = 'pointer';
+                toggle.style.boxShadow = '0 6px 18px rgba(0,0,0,0.35)';
+                toggle.innerText = 'Force background: OFF';
+
+                function setState(on) {
+                    document.documentElement.classList.toggle('force-bg', !!on);
+                    localStorage.setItem('forceBgAnimation', !!on ? '1' : '0');
+                    toggle.setAttribute('aria-pressed', !!on ? 'true' : 'false');
+                    toggle.innerText = 'Force background: ' + (!!on ? 'ON' : 'OFF');
+                    // notify other listeners (canvas) in this window
+                    window.dispatchEvent(new CustomEvent('forceBgChanged', { detail: !!on }));
+                }
+
+                toggle.addEventListener('click', () => setState(localStorage.getItem('forceBgAnimation') !== '1'));
+                document.documentElement.appendChild(toggle);
+
+                // initialize from localStorage
+                const stored = localStorage.getItem('forceBgAnimation');
+                if (stored === '1') setState(true);
+            } catch (e) { /* fail safe - don't break page */ }
+        })();
+        (function () {
+            const canvas = document.getElementById('bgCanvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+
+            let DPR = window.devicePixelRatio || 1;
+            let width = 0;
+            let height = 0;
+            let particles = [];
+            let running = true;
+
+            const prefersReducedMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
+            const isMobileMedia = window.matchMedia('(max-width: 640px)');
+
+            // returns true when animation should be disabled (user requested reduced motion and did NOT force animation)
+            function isReduced() {
+                const forced = (document.documentElement.classList && document.documentElement.classList.contains('force-bg')) || localStorage.getItem('forceBgAnimation') === '1';
+                return prefersReducedMedia.matches && !forced;
+            }
+
+            function isMobile() { return isMobileMedia.matches; }
+
+            function resize() {
+                DPR = window.devicePixelRatio || 1;
+                width = Math.max(320, window.innerWidth);
+                height = Math.max(320, window.innerHeight);
+                canvas.width = Math.round(width * DPR);
+                canvas.height = Math.round(height * DPR);
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+                ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+            }
+
+            function makeParticle(i) {
+                const type = Math.random() < 0.6 ? 'code' : 'note';
+                const baseSize = isMobile() ? 18 : 28;
+                const size = baseSize * (0.7 + Math.random() * 1.2);
+                const x = Math.random() * width;
+                const y = height + Math.random() * height * 0.6;
+                const speed = (0.3 + Math.random() * 0.9) * (isMobile() ? 0.4 : 1);
+                const sway = (Math.random() - 0.5) * 0.8;
+                const alpha = 0.2 + Math.random() * 0.6;
+                const rotation = Math.random() * Math.PI * 2;
+                return { id: i, type, x, y, size, speed, sway, alpha, rotation };
+            }
+
+            function initParticles() {
+                particles = [];
+                let count = 30;
+                if (width <= 640) count = 8;
+                else if (width <= 960) count = 14;
+                for (let i = 0; i < count; i++) particles.push(makeParticle(i));
+            }
+
+            function drawCode(p) {
+                ctx.save();
+                ctx.globalAlpha = p.alpha * 0.95;
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * 0.05);
+                // block background
+                ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                roundedRect(ctx, -p.size * 0.6, -p.size * 0.4, p.size * 1.2, p.size * 0.8, 6);
+                ctx.fill();
+                // fake code lines
+                const lines = 4;
+                for (let i = 0; i < lines; i++) {
+                    ctx.fillStyle = `rgba(255,255,255,${0.12 + i * 0.06})`;
+                    const lw = p.size * (0.5 + (i / lines) * 0.5);
+                    ctx.fillRect(-p.size * 0.45, -p.size * 0.25 + i * (p.size * 0.12), lw, Math.max(2, p.size * 0.06));
+                }
+                ctx.restore();
+            }
+
+            function drawNote(p) {
+                ctx.save();
+                ctx.globalAlpha = p.alpha * 0.95;
+                ctx.translate(p.x, p.y);
+                ctx.rotate(Math.sin((p.x + p.y) * 0.001) * 0.4 + p.rotation * 0.01);
+                ctx.font = `${Math.round(p.size * 0.9)}px serif`;
+                ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                ctx.fillText('♪', 0, 0);
+                // small shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.12)';
+                ctx.fillText('♪', 1.6, 1.6);
+                ctx.restore();
+            }
+
+            function roundedRect(ctx, x, y, w, h, r) {
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.arcTo(x + w, y, x + w, y + h, r);
+                ctx.arcTo(x + w, y + h, x, y + h, r);
+                ctx.arcTo(x, y + h, x, y, r);
+                ctx.arcTo(x, y, x + w, y, r);
+                ctx.closePath();
+            }
+
+            let last = 0;
+
+            function step(ts) {
+                if (!running) return;
+                const delta = Math.min(60, ts - last);
+                last = ts;
+
+                ctx.clearRect(0, 0, width, height);
+
+                // subtle vignette / overlay for depth
+                ctx.fillStyle = 'rgba(6,10,20,0.12)';
+                ctx.fillRect(0, 0, width, height);
+
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    p.y -= p.speed * (delta * 0.04);
+                    p.x += Math.sin((p.y + p.x) * 0.002 + p.id) * p.sway * 0.6;
+                    p.rotation += 0.002 * (i % 2 === 0 ? 1 : -1);
+
+                    if (p.y < -60 || p.x < -200 || p.x > width + 200) {
+                        // respawn at bottom
+                        particles[i] = makeParticle(p.id);
+                        particles[i].y = height + Math.random() * 80;
+                    }
+
+                    if (p.type === 'code') drawCode(p);
+                    else drawNote(p);
+                }
+
+                // subtle parallax grid lines - low opacity to mimic dashboard feel
+                ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+                ctx.lineWidth = 1;
+                for (let g = 0; g < 4; g++) {
+                    const offset = ((ts * 0.02) + g * 100) % width;
+                    ctx.beginPath();
+                    ctx.moveTo(offset - width, height * 0.2 + g * (height * 0.16));
+                    ctx.lineTo(offset, height * 0.2 + g * (height * 0.16));
+                    ctx.stroke();
+                }
+
+                window.requestAnimationFrame(step);
+            }
+
+            // draw a single static frame (used for prefers-reduced-motion or to avoid animations)
+            function drawFrame() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = 'rgba(6,10,20,0.12)';
+                ctx.fillRect(0, 0, width, height);
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+                    // render static positions without motion
+                    if (p.type === 'code') drawCode(p);
+                    else drawNote(p);
+                }
+                // light grid lines
+                ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+                ctx.lineWidth = 1;
+                for (let g = 0; g < 4; g++) {
+                    const offset = g * 100 % width;
+                    ctx.beginPath();
+                    ctx.moveTo(offset - width, height * 0.2 + g * (height * 0.16));
+                    ctx.lineTo(offset, height * 0.2 + g * (height * 0.16));
+                    ctx.stroke();
+                }
+                try { document.documentElement.classList.add('canvas-visible'); } catch (e) {}
+            }
+
+            function start() {
+                // if user requested reduced-motion and DID NOT force background, just draw a static frame
+                if (isReduced()) {
+                    // render a single static background frame to avoid blank screen when animations are disabled
+                    drawFrame();
+                    return;
+                }
+                running = true;
+                last = performance.now();
+                try { document.documentElement.classList.add('canvas-visible'); } catch (e) {}
+                requestAnimationFrame(step);
+            }
+
+            function stop() {
+                running = false;
+            }
+
+            // Pause when not visible
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) stop(); else start();
+            });
+
+            window.addEventListener('resize', () => {
+                resize();
+                initParticles();
+            });
+
+            // Listen for force toggle changes (toggle dispatches custom event)
+            window.addEventListener('forceBgChanged', (ev) => {
+                try {
+                    if (ev && ev.detail) {
+                        // user forced animation on
+                        document.documentElement.classList.add('canvas-visible');
+                        start();
+                    } else {
+                        document.documentElement.classList.remove('canvas-visible');
+                        drawFrame();
+                    }
+                } catch (e) { /* ignore */ }
+            });
+
+            // initialize
+            resize();
+            initParticles();
+            // always call start() — start() will draw a static frame when reduced-motion is requested
+            start();
+        })();
         // Add some interactivity to checkboxes
         document.querySelectorAll('.checklist input[type="checkbox"]').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
